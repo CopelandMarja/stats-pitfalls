@@ -1,0 +1,264 @@
+---
+title: "Statistics Pitfalls"
+author: "Bryan Juarez"
+date: '2022-03-30'
+output: html_document
+---
+
+# Statistics Pitfalls
+
+The purpose of this document is to address general problems in statistics and reporting that graduate students may face. These issues were identified based on published science from Habibzadeh 2013 (http://old.ease.org.uk/sites/default/files/essay_habibzadeh_final.pdf), Makin and de Xivry 2019 (https://elifesciences.org/articles/48175), and my own experience to lead this workshop from a practical standpoint. 
+
+My goal is for students to walk away from this workshop feeling more confident in performing their own analyses and with more developed knowledge of making statistical decisions when working with their own data.
+
+Throughout this document, I've written "NOTE:"s to highlight statistical knowledge that may not be common knowledge or not explicitly taught in classes. I hope these are helpful and make you feel more in control of your statistics journeys.
+
+## Reporting statistics
+
+There are MANY papers which discuss proper reporting of statistics and how inappropriate reporting of statistics continues to be pervasive in the biological sciences. These typically include linear regression models and related methods discussed from the Maximum Likelihood framework, but similar papers may be found for MCMC or Bayesian methods.
+
+**NOTE: Maximum Likelihood, often abbreviated ML is based on maximizing the likelihood of your parameter estimates given your data. Bayesian uses this same information, but uses prior knowledge and to "update" the current evidence.**
+
+We will stay in the land of ML and discuss reporting of p-values, error bars, sample sizes, and effect sizes.
+
+## Reporting p-values
+
+One of these issues is very simple: how to write p-values. First, it is impossible for one to obtain a p-value of 0.000 (e.g., "p = 0.000") and this should never be written in a publication. Just as we can never "truth" in science, we can never know that something happens or not with a certainty of 0% (unless we are doing a simulation experiment).
+
+Second, some software rounds small p-values to three decimals such that the result displays "p < 0.000", since a p-value cannot be negative (< 0), it is better to either report the exact p-value, or explicitly state that p-values have been rounded. In fact, this is necessary when p-values give too much precision, e.g., from a nearly perfect model fit.
+
+```{r}
+y <- 1:100 #save data to variable
+##keep the numbers 1 to 100 in a variable called y
+
+x <- 1:100 -1 #same as above but subtract one from all the numbers
+head(x) #confirm
+#head is short for header and shows you the top 6 lines of your data
+
+fit1 <- lm(y ~ x) #fit a linear model
+#fit a line through my data. The tilda is simple notation showing you are regressing y onto x.
+
+anova(fit1) #perform ANOVA
+#"perform ANOVA on my linear model fit"
+```
+
+In this case is is appropriate to report p < 0.001. 
+
+**NOTE: Permutational based methods report exact p-values like p < 0.0512 if one uses 10k permutations (4 decimal points) in evaluating significance. In this case, it is best to not round to three decimal points because the 4 decimal points represent the real number of times where the permuted test statistic was less than the observed test statistic corresponding to your alternative hypothesis.**
+
+## Error bars, standard error, sample size
+
+Error bars, standard errors, and sample sizes are all related concepts. In science, error bars may represent several measures of error. For example, they may be 95% Confidence Intervals (95% CI) for the mean, allowing readers to perform statistical tests "at a glance", they may be standard errors (SE) indicating dispersion of the data, or they may be the standard error of the mean (SEM). They each serve different purposes and it is the responsibility of the author to report the most relevant type of error bars. 
+
+95% confidence intervals: These should be shown when one is interested in observing values which would or would not be rejected if performing a statistical analysis. For example, values outside a 95% CI of values 1-3 would be rejected at alpha = 0.05 if one were to perform the relevant statistical test. 1-3 excludes 0, thus, we can say that the mean of our sample is significantly greater than 0. 
+
+The standard error of the mean (SEM): represents precision of the mean of the distribution. However, it does not allow us to visualize the dispersion of the data! If we wish to visualize dispersion using error bars (relevant for ANOVA), it is the standard error (SE) of the data, and not the SEM that we should display.
+
+The sample size: is always important to report as it is essential in statistics. If your study has groups, the sample sizes for each group should also be reported. Sample sizes should be the number of individuals in each group and NOT the number of variables per group - this can be a common mistake.
+
+## Effect sizes and meta-analysis
+Others might be interested in using your results to guide their studies. For example, they might need to calculate the effect size of your study to aid in designing the minimum sample size for their own experiment. See the following for formulas and details used in power analysis: https://sphweb.bumc.bu.edu/otlt/mph-modules/bs/bs704_power/bs704_power_print.html. Similarly, others might be using your results in a meta-analysis. For these reasons, it is crucial to report data attributes (means, dispersion, sample sizes), test statistics (e.g., F-stat or t-stat), and p-values. 
+
+**A simpler and complete approach would be to make your raw data available and report 1) test statistics, 2) effect sizes, 3) sample size, and 4) p-values.**
+
+**NOTE: When reporting ANOVA tables, it is sufficient to calculate all but the residual statistics as long as your report the residual degrees of freedom (DF). We are typically most interested in our independent variable statistics and not the residual statistics, the residual statistics (sum of squares, mean square, F-stat) may all be back calculated if necessary!**
+
+## Effect sizes often matter as much as p-values
+
+For the majority of our studies, we are interested in how much change happens in one variable when treatments are applied, or more generally, the effect of one variable on another. 
+
+It is true that as sample sizes increase, the p-value will be significant. P-values are not everything. We must also interpret the effect size and figure out what this means about biology.
+
+We can all agree that a body size difference of 0.1 mm is negligible when studying for example, large mammals. However, with enough individuals in the study, we may conclude that two populations have different average body sizes and incorrectly assume that it is of large biological importance. 
+
+```{r}
+pop1 <- rnorm(1e6, 10, 1) #simulate two populations
+#"give me 1 million samples with mean of 10 and variance 1"
+pop2 <- rnorm(1e6, 10.1, 1) #this population has a mean of 10.1
+t.test(pop1, pop2) #two populations are statistically significant
+```
+
+Even though we have a low p-value, this does not mean our result is meaningful and important. In fact, using an unnecessarily large sample size can lead us astray without paying attention to the effect size. In some cases, this may even border on unethical and be considered "p-hacking". 
+
+Always remember to report and consider your effect size!
+
+## Multiple coparisons and p-hacking
+
+p-hacking can come in many forms. Making up fake data is unethical. However, possibly more common instances of p-hacking involve data dredging and failing to account for multiple comparisons. 
+
+Not accounting for multiple comparisons can lead to experiments to experiments with increased family-wise error rates greater than 0.05, resulting in a Type I statistical error (false positive) where we reject the null hypothesis when the alternative hypothesis is not supported. 
+
+**NOTE: We can never know which specific p-value is a Type I or Type II error. But, we can perform our analyses in such a way such that the probability of each is equal to accepted levels in our field.**
+
+Below is code showing examples of 1) Data dredging/spurious correlations, 2) Multiple comparisons, 3) and practical advice and examples for implementing multiple comparisons.
+
+## Data dredging/spurious correlations
+
+Data dredging is when you purposefully try to force your data to give a significant result. This is especially a problem if one has a large multivariate dataset or a factor with many levels, where you can regress against many variables. The random chance that at least one level or variable will be significant is high (Type I error). We show how this can happen below, by simulating uncorrelated variables and then performing multiple regression.
+
+```{r}
+library(MASS) #load library needed to simulate multivariate data
+
+set.seed(20) 
+#a seed lets us reproduce the same random results, this is like clicking the save button after a random simulation
+#"set seed to 20"
+
+#simulate 20 uncorrelated variables with mean = 5, variance = 1, and covariance = 0 (i.e., 0 correlation)
+
+mu <- rep(5, 20)#set all means to 5
+#"repeat the number 5, 20 times"
+
+Sigma <- matrix(rep(0, 400), nrow = 20)#get 20x20 covariance matrix with no correlation between variables (all off-diagonal entries are 0)
+#"give me a matrix with 20 rows (and columns) with all 400 entries = 0"
+
+diag(Sigma) <- 1 #change all variance entries to 1, but leave all covariances as 0
+#"set matrix diagonal to = 1"
+
+#none are correlated because each off-diagonal entry is 0 in covariance matrix 
+dat <- mvrnorm(n = 1000, mu = mu, Sigma = Sigma) #Simulate from multivariate normal distribution
+##"give me 1000 samples from a multivarite normal distribution with means mu and covariance matrix Sigma"
+
+dat <- data.frame(dat)#change to data frame
+
+anova(lm(dat[,1] ~ ., data = dat[,-1]))#regress the first variable against all other variables
+##perform ANOVA by regressing the first column in dat against the rest of the columns in dat
+```
+
+## Multiple comparisons and experiment-wise error rate
+
+Due to the risks of inappropriately interpreting a Type I error, we must account for multiple hypothesis testing by taking these multiple comparisons into account. Most people are familiar with the (conservative) Bonferroni correction. However...
+
+**NOTE: Bonferroni is outdated and methods with higher power to detect significance when the null hypothesis is not true have been developed. See next section. This is not to say Bonferroni should not be used when we want to take the most conservative approach possible.**
+
+```{r}
+pvalues <- anova(lm(dat[,1] ~ ., data = dat[,-1]))[,5] #take all p-values from model results
+#"give me column 5 of the ANOVA table"
+pvalues <- pvalues[-20] #remove NA in vector
+#remove NA belonging to residuals row. Residuals do not have a p-value as this is non-sensical.
+p.adjust(pvalues, method = "bonferroni") #perform Bonferroni adjustment
+```
+Using the Bonferroni correction the Type I error is correctly removed. Recall we simulated the variables to have correlation = 0.
+
+## Performing multiple comparisons (cont.)
+
+There are many multiple comparisons algorithms in R. Bonferroni shown above is one. However, Bonferroni lacks power compared to newer methods. For example, the Holm method (like the Bonferroni; Holm 1979) is generally valid under any assumptions (of the data, i.e., the p-values). 
+
+If your many p-values are instead correlated = obtained from the same dataset, (as in GWAS and other types of studies) you could use the following. Positive and dependent test statistics are an assumption of the Sidak-like step-down procedure (Hollander and Covenhaver 1987). This method is considered an improvement over the Holm method.
+
+```{r}
+#Holm
+p.adjust(pvalues, method = "holm") #run Holm correction
+#Account for multiple comparisons using the Holm algorithm
+
+#Sidak-like step down procedure
+
+#install.packages("mutoss")
+library(mutoss)
+SidakSD(pvalues, alpha = 0.05) #use Sidak-like step-down procedure
+#"Account for multiple compaisons using the SidakSD while maintaining a fmaily-wise error rate of the nominal 0.05"
+```
+
+## Model assumptions in statistics
+
+Different statistical tests have different assumptions, even "model-free" methods. As seen above, multiple comparisons algorithms also have different assumptions. We must always be aware of the situations in which different approaches are preferred. Reading software documentation always helps, the best documentation guides the readers through the differences in approaches.
+
+One of these assumptions is that of normality. For example, linear models assume normality of **residuals**. 
+
+**NOTE: this does NOT mean normality of the raw data. Unfortunately, this misunderstanding remains pervasive, even in statistical guides. Let's look at an example.**
+
+```{r}
+A <- rnorm(100, 75, 5) #simulate one group
+#simulate 100 samples from normal distribution with mean 50 and variance 5
+B <- rnorm(100, 100, 5) #simulate a second group
+#simulate 100 samples from normal distribution with mean 75 and variance 5.
+C <- c(A, B) #form new group from  A and B
+#form new group by adding two different distributions
+hist(C) #histogram of C
+#C is a random variable drawn the population defined by A and B, e.g., body size in both males and females of a large toad species with substantial sexual size dimorphism
+```
+
+The variable C is not normally distributed. Does this mean you cannot use this data in a linear model because it would violate the normality assumption? Absolutely not.
+
+```{r}
+groups <- factor(c(rep("A", 100), rep("B", 100))) #create grouping variable
+#"Make factor from the combination of A and B repeated 100 times each"
+fit2 <- lm(C ~ groups) #Regress C onto known groups
+#We simulated the first 100 entries of C to have mean 75, here we reflect this as group A and fit the model accordingly
+
+fit2 #see model coefficients
+#model correctly identifies means of groups as appx. 75 and 100
+
+anova(fit2) #fit ANOVA
+#ANOVA correctly reveals significant difference between the values in the two groups
+
+qqnorm(resid(fit2)) #QQ plot
+#QQ plot shows the model residuals are approximately normal. There is no pattern in the data. This includes U, V, or sigmoidal patterns, all associated with non-linear dynamics and a poor capability of a linear model to do its job of predicting variable responses
+
+plot(resid(fit2) ~ predict(fit2)) #residual plot
+#residual plot looks as expected, revealing no model violations and lack of heteroscedasticity (uneven residuals associated with a cone-like plot).
+```
+
+The same applies with regression as it does with ANOVA since they are both linear models. E.g., if instead of a grouping variable, we had another continuous variable known to differ between groups A and B, the residual plot would look similar and model assumptions would not be violated.
+
+**NOTE: Model assumptions exist for two reasons. First, because these assumptions are needed to make the model (the math) work. Second, to allow the method to perform its job. For example, if the QQ plot showed a sigmoidal pattern, a linear model is not at all appropriate and would result in a poor model fit. Similarly, if the residual plot showed a cone pattern, this would mean the model differs in its ability to make predictions across the range of the best fit line (the linear model fit).**
+
+## Plots are not a substitute for a statistical test
+
+The message here is simple. You should support conclusions using statistical hypothesis testing.
+
+**NOTE: In statistics, we use a lot of analyses for visualization (e.g., clustering, PCA, LDA, general plotting). Often, we may use these to plot distributions of interest. However, note that statistical methods developed for visualization are NOT appropriate substitutes for statistical tests. Imagine you are a reviewer and someone present a PC plot where groups are somewhat overlapping or even mostly not overlapping. The authors draw conclusions from this PC plot, should you believe them? Definitely not, not until evidence is presented in the form of a p-value. I.e., not until the run a statistical test!**
+
+The code below is an example of statistical results (with p-value) that do not necessarily match what we might expect by looking at the boxplot. Feel free to change the seed to explore other randomly generated data and results.
+
+```{r}
+
+set.seed(63)
+A <- rnorm(100, 0, 200)
+B <- rnorm(100, 60, 200)
+C <- rnorm(100, 65, 1)
+ABC <- c(A, B, C) #combine all 3 variables into same vector (to be used as Y variable in regression)
+boxplot(cbind(A, B, C)) #show boxplot for all 3 variables
+categories <- as.factor(c(rep("A", 100), rep("B", 100), rep("C", 100))) #form new grouping with A, B, and C
+
+fit3 <- lm(ABC ~ categories) #regress ABC onto known groupings
+anova(fit3) #obtain ANOVA table
+##variable categories is significant
+TukeyHSD(aov(fit3)) #perform post-hoc pairwise comparisons using Tukey's honest sig differences
+##determine which pariwise comparisons within categories are significant
+```
+**NOTE: We have used factors in this code over and over. This is important when fitting linear models because it tells R that your variable is discrete. This is less of an issue if you do not use number to represent groups, or if you are performing ANOVA with only two levels in your factor, but otherwise may result in many problems. It is good practice to set the factor for discrete variables in R before fitting the model.**
+
+## Do not interpret results without pairwise comparisons
+
+There are many examples of published articles which make the mistake described above. 
+
+Background: You have a multivariate dataset. You perform any form of PCA-like (Principal Component Analysis-like) transformation of the dataset, plot the resulting data, and the color-code the points by a grouping factor. Your groups appear to be non-overlapping. IS your hypothesis supported? Definitely not from a statistical perspective. A "visual test" without direct pairwise comparison tests is not rigorous science. 
+
+Similarly, a more complex example and more egregious error is the following. LDA (linear discriminant analysis) is a method meant to find transformations in multivariate data which maximally separate a priori groups. LDA is designed to separate groups (which are defined and maybe known a priori). LDA does not give a p-value, because it is not meant to, and discussing group mean differences based on an LDA plot is circular reasoning (i.e., it does not make sense to use a method that separates groups and then ask if group differences exist). LDA has many uses but testing whether group mean differences exist is not one of them. Instead, the classic use of LDA is to define the manner in which two groups differ, e.g., defining the morphology which differs between two different species of ants.
+
+```{r}
+set.seed(40)
+mu <- rep(1, 50) #simulate 50 variables with mean of 1
+Sigma <- matrix(rep(0, 50*50), nrow = 50) #provide 50x50 covariance matrix with no correlation between variables (all off-diagonal entries are 0)
+diag(Sigma) <- 5 #give all variables a variance of 5
+
+#none are correlated because each off-diagonal entry in covariance 
+dat <- mvrnorm(n = 99, mu = mu, Sigma = Sigma) #take 99 samples from this distribution
+head(dat)
+groups <- as.factor(rep(c("A", "B", "C"), 33)) #define arbitrary groups
+
+
+pca <- prcomp(dat)$x #save PCA results into a vector
+plot(pca, col = c("black", "gray", "lightblue"), pch = c(15, 16, 17)) #a PCA plot confirms the groups are entirely overlapping
+#makes sense because we arbitrarily split data from the SAME distribution.
+
+groups.lda <- lda(groups ~ ., data.frame(dat, groups = groups)) #use all 50 variables to determine how arbitrary groups might differ
+
+plot(dat %*% groups.lda$scaling, col = c("black", "gray", "lightblue"), pch = c(15, 16, 17)) #transform data by scaling factor obtained from LDA and plot
+#LDA separates groups almost entirely
+#LDA does this by taking edges of distributions of all the variables and separates observations based on these random differences in the tails of the multivariate normal distribution
+
+summary(manova(dat ~ groups)) #Run MANOVA regressing data onto our three arbitrary groups
+#MANOVA correctly reveals that our arbitrary group's means are not substantially different.
+
+```
